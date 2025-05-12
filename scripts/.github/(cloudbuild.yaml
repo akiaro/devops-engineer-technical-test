@@ -1,0 +1,79 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/my-php-image', '.']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'gcloud run deploy my-php-service --image gcr.io/$PROJECT_ID/my-php-image --platform managed --region us-central1'
+
+images:
+  - 'gcr.io/$PROJECT_ID/my-php-image'
+
+
+
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Trigger Cloud Build
+        run: |
+          gcloud builds submit --config cloudbuild.yaml .
+
+
+Implement Infrastructure as Code for Continuous Delivery
+To implement continuous delivery with Terraform Cloud or other tools, set up a Terraform Cloud workspace:
+
+Create a Terraform Cloud Account and set up a new workspace.
+Connect your GitHub repository to the Terraform Cloud workspace.
+Configure environment variables in Terraform Cloud for your sensitive data (e.g., database credentials).
+Modify your Terraform code to utilize Terraform Cloud’s remote state management:
+
+
+terraform {
+  backend "remote" {
+    organization = "your-org"
+
+    workspaces {
+      name = "your-workspace"
+    }
+  }
+}
+
+
+Utilize Security Best Practices
+Implement IAM Roles:
+Assign specific IAM roles to your Cloud Run service account for required permissions.
+
+
+resource "google_project_iam_member" "cloud_run_invoker" {
+  project = "my-project"
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:my-service-account@my-project.iam.gserviceaccount.com"
+}
+
+
+
+Use Secret Manager for sensitive information like database credentials. Reference secrets in your Terraform configuration:
+
+
+
+resource "google_secret_manager_secret_version" "db_password" {
+  secret = google_secret_manager_secret.db_password.id
+  secret_data = "your-db-password"
+}
+
+
+
